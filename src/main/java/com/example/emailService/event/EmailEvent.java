@@ -16,3 +16,4 @@ public class EmailEvent {
     private Map<String, String> metadata; // Optional extra data
 }
 
+//test cicd

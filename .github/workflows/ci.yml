@@ -61,5 +61,5 @@ jobs:
             docker stop emailService || true
             docker rm emailService || true
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/expensemanagementapp-email_service:latest 
-            docker run -d --name emailService --env-file /home/ec2-user/expense-app/.env -p 8081:8081 ${{ secrets.DOCKERHUB_USERNAME }}/expensemanagementapp-email_service:latest
+            docker run -d --name emailService --env-file /home/ec2-user/.env -p 8081:8081 ${{ secrets.DOCKERHUB_USERNAME }}/expensemanagementapp-email_service:latest
             

@@ -53,14 +53,32 @@ jobs:
             -t ${{ secrets.DOCKERHUB_USERNAME }}/expensemanagementapp-email_service:latest \
             --push .
 
-      - name: SSH to EC2
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          script: |
-            cd /home/ec2-user
-            docker compose pull email_service
-            docker compose up -d email_service
-            docker ps
+  deploy:
+      needs: build
+      runs-on: ubuntu-latest
+      if: github.event_name == 'push'
+  
+      steps:
+        - name: Configure AWS credentials
+          uses: aws-actions/configure-aws-credentials@v2
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region: ${{ secrets.AWS_REGION }}
+        #ssm to ec2 instance
+        - name: Deploy to Backend-1
+          run: |
+            aws ssm send-command \
+              --instance-ids ${{ secrets.EC2_BACKEND_1_INSTANCE_ID }} \
+              --document-name "AWS-RunShellScript" \
+              --parameters commands=["cd /home/ssm-user/expensphie && docker-compose -f docker-compose.backend.yml pull && docker-compose -f docker-compose.backend.yml up -d --no-deps email_service"]
+  
+        - name: Wait for Backend-1
+          run: sleep 30
+  
+        - name: Deploy to Backend-2
+          run: |
+            aws ssm send-command \
+              --instance-ids ${{ secrets.EC2_BACKEND_2_INSTANCE_ID }} \
+              --document-name "AWS-RunShellScript" \
+              --parameters commands=["cd /home/ssm-user/expensphie && docker-compose -f docker-compose.backend.yml pull && docker-compose -f docker-compose.backend.yml up -d --no-deps email_service"]
